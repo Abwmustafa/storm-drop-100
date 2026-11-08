@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Storm Drop 100</title>
+<meta name="description" content="A percent quiz. 100 players drop on an island. Answer right, beat the storm and be the last one standing.">
+<style>
+:root{--ink:#12233f;--sky1:#0f3488;--sky2:#1c8fd6;--sun:#ffd21f;--storm:#e5338f;--ok:#14a155;--okbg:#dcf7e7;--bad:#d9364a;--badbg:#fde3e6;--soft:#eef3fb;--line:#c6d3e6;--shield:#27b6f2;--storm-a:0}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{min-height:100vh;font-family:"Trebuchet MS","Segoe UI",system-ui,-apple-system,sans-serif;color:var(--ink);background:linear-gradient(180deg,var(--sky1),var(--sky2) 75%,#7fd3f5);background-attachment:fixed;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 42%,transparent 38%,var(--storm) 105%);opacity:var(--storm-a);transition:opacity .8s}
+.screen{display:none;position:relative;max-width:860px;margin:0 auto;padding:16px}
+.screen.on{display:block}
+button{font:inherit;color:inherit;cursor:pointer}
+.title{font-family:"Arial Black","Trebuchet MS",Impact,sans-serif;font-weight:900;text-transform:uppercase;font-style:italic;color:var(--sun);text-shadow:0 3px 0 var(--ink),0 0 2px var(--ink);letter-spacing:.5px;margin:0;line-height:1.05}
+.big-btn{display:block;width:100%;max-width:360px;margin:12px auto 0;padding:16px 20px;font-family:"Arial Black","Trebuchet MS",sans-serif;font-size:22px;font-weight:900;text-transform:uppercase;font-style:italic;background:var(--sun);color:var(--ink);border:3px solid var(--ink);border-radius:14px;box-shadow:0 5px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.big-btn:hover{transform:translateY(-1px);box-shadow:0 6px 0 var(--ink)}
+.big-btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.big-btn.ghost{background:#fff;font-size:17px;padding:11px 16px}
+/* start */
+#start{text-align:center;padding-top:22px}
+#start .title{font-size:clamp(40px,9vw,68px)}
+.sub{color:#fff;font-size:18px;font-weight:700;margin:6px 0 2px}
+.hero{display:block;width:100%;max-width:620px;margin:6px auto 0}
+.floaty{animation:floaty 3s ease-in-out infinite}
+@keyframes floaty{50%{transform:translateY(10px)}}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:10px auto 4px;max-width:620px}
+.step{background:#fff;border:3px solid var(--ink);border-radius:12px;padding:10px 6px;font-weight:800;font-size:15px;line-height:1.2}
+.step b{display:block;font-size:24px;color:var(--storm);font-family:"Arial Black",sans-serif;font-style:italic}
+/* hud */
+.hud{display:grid;grid-template-columns:auto auto 1fr auto auto;align-items:center;gap:10px;background:var(--ink);color:#fff;border-radius:14px;padding:8px 12px;margin-bottom:12px;box-shadow:0 4px 0 rgba(0,0,0,.25)}
+.map{width:58px;height:58px}.map svg{display:block;width:100%;height:100%}
+.leftBox{text-align:center;line-height:1}
+.leftBox b{display:block;font-family:"Arial Black",sans-serif;font-size:30px;color:var(--sun);font-style:italic}
+.leftBox span{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.bars{display:grid;gap:5px;min-width:0}
+.bar{position:relative;height:22px;background:#2e4266;border-radius:7px;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;width:0;transition:width .45s}
+.bar span{position:relative;display:block;text-align:center;font-size:13px;font-weight:800;line-height:22px;text-shadow:0 1px 1px rgba(0,0,0,.6)}
+.bar.sh i{background:var(--shield)}.bar.pg i{background:var(--ok)}
+.starBox{font-family:"Arial Black",sans-serif;font-size:20px;color:var(--sun);white-space:nowrap}
+.icon{background:#2e4266;border:0;color:#fff;border-radius:9px;width:40px;height:40px;font-size:18px}
+.icon.off{opacity:.45}
+.hud.hit{animation:hit .35s}
+@keyframes hit{20%{transform:translateX(-7px)}45%{transform:translateX(6px)}70%{transform:translateX(-4px)}}
+/* question card */
+.card{background:#fff;border:3px solid var(--ink);border-radius:16px;padding:14px 16px 18px;box-shadow:0 5px 0 rgba(0,0,0,.28)}
+.cardTop{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.tag{background:var(--storm);color:#fff;font-weight:800;font-size:13px;padding:4px 10px;border-radius:999px}
+.read{background:var(--soft);border:2px solid var(--line);border-radius:9px;font-weight:700;font-size:13px;padding:5px 10px}
+.prompt{font-size:21px;font-weight:700;line-height:1.35;margin:6px 0 10px}
+.art{text-align:center;margin:0 0 12px}
+.art[hidden]{display:none}
+.mini{display:inline-block;max-width:100%}.mini svg{display:block;max-width:100%;height:auto}
+.note{display:block;font-size:14px;font-weight:600;color:#4a5d7a;margin-top:6px}
+.sheet-art{width:100%;max-width:280px;height:auto}
+.opts{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.opts.one{grid-template-columns:1fr}
+.opts.pics{grid-template-columns:repeat(3,minmax(0,1fr))}
+.opts.pics.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.opt{display:flex;align-items:center;gap:10px;min-height:58px;text-align:left;background:var(--soft);border:3px solid var(--line);border-radius:12px;padding:8px 12px;font-size:20px;font-weight:800;transition:transform .08s,border-color .08s}
+.opt:hover:not(:disabled){border-color:var(--ink);transform:translateY(-1px)}
+.opt .ltr{flex:none;width:30px;height:30px;border-radius:8px;background:var(--ink);color:#fff;font-size:15px;line-height:30px;text-align:center}
+.opt .t{min-width:0}
+.pics .opt{flex-direction:column;align-items:center;text-align:center;padding:8px 6px;font-size:15px}
+.pics .opt .t{width:100%;display:block}
+.pics .mini{display:block;margin:0 auto 4px}.pics .mini svg{margin:0 auto}
+.opt.good{background:var(--okbg);border-color:var(--ok)}.opt.good .ltr{background:var(--ok)}
+.opt.bad{background:var(--badbg);border-color:var(--bad);animation:hit .35s}.opt.bad .ltr{background:var(--bad)}
+.opt:disabled{cursor:default;color:inherit}
+.opt.dim:not(.good){opacity:.5}
+.fb{margin-top:12px;font-size:17px;font-weight:600;line-height:1.4;border-radius:10px;padding:0}
+.fb.on{padding:10px 12px}
+.fb.good{background:var(--okbg)}.fb.bad{background:var(--badbg)}
+.fb b.h{font-weight:900}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-weight:800;line-height:1.1;margin:0 .15em;font-size:.92em}
+.fr>span:first-child{border-bottom:2px solid currentColor;padding:0 .25em}
+.tb{border-collapse:collapse;margin:0 auto;font-size:17px;font-weight:700}
+.tb th,.tb td{border:2px solid var(--ink);padding:5px 14px}.tb th{background:var(--soft)}
+#nextBtn{display:none;scroll-margin-bottom:16px}
+#nextBtn.on{display:block}
+/* drop overlay */
+#drop{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;flex-direction:column;background:linear-gradient(180deg,var(--sky1),var(--sky2));color:#fff;overflow:hidden}
+#drop.on{display:flex}
+#drop svg{width:190px;animation:fall 1.3s ease-out both}
+@keyframes fall{from{transform:translateY(-55vh) rotate(-8deg)}to{transform:none}}
+#drop .title{font-size:34px;margin-top:6px}
+/* end */
+#end{text-align:center;padding-top:20px}
+#end .title{font-size:clamp(32px,7vw,50px)}
+.rank{font-family:"Arial Black",sans-serif;font-style:italic;font-size:88px;color:#fff;line-height:1;text-shadow:0 4px 0 var(--ink);margin:4px 0}
+.score{background:#fff;border:3px solid var(--ink);border-radius:16px;padding:14px;margin:12px auto;max-width:560px}
+.score .pct{font-family:"Arial Black",sans-serif;font-size:50px;color:var(--ok);line-height:1.1}
+.score p{margin:4px 0;font-size:18px;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 0}
+.stats div{background:var(--soft);border-radius:10px;padding:8px 4px;font-size:13px;font-weight:700}
+.stats b{display:block;font-size:22px;font-family:"Arial Black",sans-serif}
+.again{margin:10px 0 0;text-align:left;font-size:16px;font-weight:600}
+.again ul{margin:4px 0 0;padding-left:20px}
+.teacher{color:#fff;font-weight:800;font-size:17px;margin:8px 0 0}
+/* toast and confetti */
+#toast{position:fixed;left:50%;bottom:18px;z-index:30;transform:translate(-50%,200%);visibility:hidden;background:var(--ink);color:#fff;font-weight:800;font-size:16px;padding:10px 16px;border-radius:12px;border:2px solid var(--sun);transition:transform .25s,visibility .25s;max-width:92vw;text-align:center}
+#toast.on{transform:translate(-50%,0);visibility:visible}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:25;overflow:hidden}
+#confetti i{position:absolute;top:-16px;width:10px;height:14px;animation:cf 2.8s linear forwards}
+@keyframes cf{to{transform:translateY(106vh) rotate(720deg)}}
+@media (max-width:560px){
+  .screen{padding:10px}
+  .hud{grid-template-columns:auto auto 1fr auto;gap:8px;padding:8px}
+  .bars{grid-column:1 / -1;grid-row:2}
+  .map{width:48px;height:48px}
+  .prompt{font-size:19px}
+  .opt{font-size:18px;padding:8px}
+  .pics .opt{padding:6px 3px;font-size:13px}
+  .pics .opt .ltr{width:24px;height:24px;line-height:24px;font-size:13px}
+  .steps .step{font-size:13px}
+}
+@media (prefers-reduced-motion:reduce){.floaty,#drop svg,.hud.hit,.opt.bad{animation:none}}
+</style>
+</head>
+<body>
+
+<section class="screen on" id="start">
+  <h1 class="title">Storm Drop 100</h1>
+  <p class="sub">A percent quiz. Percent means "out of 100".</p>
+  <div id="hero"></div>
+  <div class="steps">
+    <div class="step"><b>1</b>100 players drop on the island</div>
+    <div class="step"><b>2</b>Tap the right answer</div>
+    <div class="step"><b>3</b>Beat the storm. Be the last one standing</div>
+  </div>
+  <button class="big-btn" id="goBtn">Drop in!</button>
+  <button class="big-btn ghost" id="newBtn" style="display:none">Start a new game</button>
+</section>
+
+<section class="screen" id="play">
+  <header class="hud" id="hud">
+    <div class="map" id="map"></div>
+    <div class="leftBox"><b id="left">100</b><span>players left</span></div>
+    <div class="bars">
+      <div class="bar sh"><i id="shBar"></i><span id="shTxt"></span></div>
+      <div class="bar pg"><i id="pgBar"></i><span id="pgTxt"></span></div>
+    </div>
+    <div class="starBox">★ <span id="stars">0</span></div>
+    <button class="icon" id="sndBtn" aria-label="Turn the sound on or off">♪</button>
+  </header>
+  <main class="card">
+    <div class="cardTop"><span class="tag" id="tag"></span><button class="read" id="readBtn">🔊 Read to me</button></div>
+    <p class="prompt" id="prompt"></p>
+    <div class="art" id="art"></div>
+    <div class="opts" id="opts"></div>
+    <div class="fb" id="fb" aria-live="polite"></div>
+    <button class="big-btn" id="nextBtn">Next ▶</button>
+  </main>
+</section>
+
+<section class="screen" id="end">
+  <h1 class="title" id="endTitle"></h1>
+  <div class="rank" id="endRank"></div>
+  <div class="score">
+    <div class="pct" id="endPct"></div>
+    <p id="endLine"></p>
+    <div class="stats">
+      <div><b id="endStars"></b>stars</div>
+      <div><b id="endShield"></b>shield left</div>
+      <div><b id="endStreak"></b>best streak</div>
+    </div>
+    <div class="again" id="endAgain"></div>
+  </div>
+  <p class="teacher">Show this screen to your teacher.</p>
+  <button class="big-btn" id="againBtn">Play again</button>
+</section>
+
+<div id="drop"><svg id="dropArt" viewBox="0 0 200 170" role="img" aria-label="Your player gliding down"></svg><div class="title">Dropping in…</div></div>
+<div id="toast" role="status"></div>
+<div id="confetti" aria-hidden="true"></div>
+
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
+// ---------------- audio: original music and sound effects, made live with Web Audio ----------------
+var AC = null, soundOn = true, NOISE = null, MASTER = null;
+function ac() {
+  if (!AC) {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    MASTER = AC.createGain(); MASTER.gain.value = 0.7; MASTER.connect(AC.destination);
+    NOISE = AC.createBuffer(1, AC.sampleRate, AC.sampleRate);
+    var d = NOISE.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+var hz = function (m) { return 440 * Math.pow(2, (m - 69) / 12); };
+function toneAt(f, t, d, type, v, f2) {
+  var o = AC.createOscillator(), g = AC.createGain();
+  o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v, t + Math.min(0.012, d / 4)); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g); g.connect(MASTER); o.start(t); o.stop(t + d + 0.05);
+}
+function noiseAt(t, d, v, freq) {
+  var s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+  s.buffer = NOISE; f.type = 'bandpass'; f.frequency.value = freq || 1800; f.Q.value = 0.8;
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  s.connect(f); f.connect(g); g.connect(MASTER); s.start(t); s.stop(t + d + 0.05);
+}
+function fx(fn) { if (!soundOn) return; try { ac(); fn(AC.currentTime + 0.01); } catch (e) { } }
+var SFX = {
+  drop: function () { fx(function (t) { toneAt(900, t, 1.0, 'sine', 0.07, 160); noiseAt(t, 1.0, 0.05, 1200); }); },
+  ok: function () { fx(function (t) { [64, 67, 72, 76].forEach(function (m, i) { toneAt(hz(m + 12), t + i * 0.07, 0.4, 'triangle', 0.09); }); noiseAt(t, 0.12, 0.05, 5000); }); },
+  star: function () { fx(function (t) { [84, 88, 91, 96].forEach(function (m, i) { toneAt(hz(m), t + i * 0.05, 0.4, 'sine', 0.05); }); }); },
+  hit: function () { fx(function (t) { toneAt(180, t, 0.3, 'sawtooth', 0.07, 70); noiseAt(t, 0.25, 0.09, 500); }); },
+  shield: function () { fx(function (t) { [67, 71, 74, 79].forEach(function (m, i) { toneAt(hz(m + 12), t + i * 0.06, 0.45, 'sine', 0.07); }); }); },
+  win: function () { fx(function (t) { [[60, 0], [64, 0.15], [67, 0.3], [72, 0.45], [67, 0.75], [72, 0.9], [76, 1.05]].forEach(function (p, i) { toneAt(hz(p[0] + 12), t + p[1], i === 6 ? 1.6 : 0.4, 'triangle', 0.1); }); [48, 55, 64].forEach(function (m) { toneAt(hz(m), t + 1.05, 1.8, 'sine', 0.09); }); for (var k = 0; k < 6; k++) noiseAt(t + k * 0.15, 0.12, 0.05, 5000); }); }
+};
+// music: a driving loop in a minor key (Am, F, C, G) with a pulsing bass
+var Music = {
+  timer: null, next: 0, beat: 0,
+  start: function () {
+    this.stop(); if (!soundOn) return;
+    try { ac(); } catch (e) { return; }
+    this.beat = 0; this.next = AC.currentTime + 0.2;
+    var self = this; this.timer = setInterval(function () { self.tick(); }, 60);
+  },
+  tick: function () { while (this.next < AC.currentTime + 0.25) { this.play(this.next, this.beat); this.next += 0.21; this.beat++; } },
+  play: function (t, b) {
+    var bar = Math.floor(b / 16) % 4, root = [45, 41, 48, 43][bar], ch = [[69, 72, 76], [65, 69, 72], [67, 72, 76], [67, 71, 74]][bar];
+    toneAt(hz(root - 12), t, 0.18, 'triangle', 0.075);
+    if (b % 4 === 0) toneAt(120, t, 0.12, 'sine', 0.11, 50);
+    if (b % 8 === 4) noiseAt(t, 0.1, 0.035, 1800);
+    if (b % 2 === 1) noiseAt(t, 0.03, 0.016, 8000);
+    var riff = [0, 2, 1, 2, 0, 1, 2, 1];
+    if ([0, 3, 6, 8, 11, 14].indexOf(b % 16) >= 0) toneAt(hz(ch[riff[b % 8]]), t, 0.22, 'square', 0.014);
+  },
+  stop: function () { if (this.timer) clearInterval(this.timer); this.timer = null; }
+};
+document.addEventListener('visibilitychange', function () { if (document.hidden) Music.stop(); else if (S && $('play').classList.contains('on')) Music.start(); });
+
+// ---------------- drawings ----------------
+var C = { grid: '#2e86de', tenths: '#119c7f', bar: '#e07b16' };
+function glider() {
+  return '<g><path d="M100 8 L188 62 L100 46 L12 62 Z" fill="#ffd21f" stroke="#12233f" stroke-width="4" stroke-linejoin="round"/><path d="M100 8 L100 46 L12 62 Z" fill="#e5338f" stroke="#12233f" stroke-width="4" stroke-linejoin="round"/>' +
+    '<path d="M44 57 L90 100 M156 57 L110 100" stroke="#12233f" stroke-width="3"/>' +
+    '<rect x="84" y="118" width="32" height="34" rx="9" fill="#2e86de" stroke="#12233f" stroke-width="4"/><circle cx="100" cy="102" r="20" fill="#fff" stroke="#12233f" stroke-width="4"/><rect x="85" y="94" width="30" height="13" rx="6" fill="#12233f"/><rect x="90" y="97" width="10" height="4" rx="2" fill="#7fd3f5"/>' +
+    '<path d="M84 128 L68 112 M116 128 L132 112" stroke="#12233f" stroke-width="6" stroke-linecap="round"/><path d="M92 152 v12 M108 152 v12" stroke="#12233f" stroke-width="6" stroke-linecap="round"/></g>';
+}
+function heroSVG() {
+  function tree(x, y, s) { return '<rect x="' + (x - 3 * s) + '" y="' + (y - 4 * s) + '" width="' + (6 * s) + '" height="' + (12 * s) + '" fill="#7a4a24"/><path d="M' + (x - 16 * s) + ' ' + (y - 2 * s) + ' L' + x + ' ' + (y - 34 * s) + ' L' + (x + 16 * s) + ' ' + (y - 2 * s) + ' Z" fill="#1f8a3b" stroke="#12233f" stroke-width="2.5"/>'; }
+  function crate(x, y) { return '<rect x="' + x + '" y="' + y + '" width="30" height="24" rx="3" fill="#ffd21f" stroke="#12233f" stroke-width="3"/><rect x="' + x + '" y="' + (y + 8) + '" width="30" height="6" fill="#e5338f"/><rect x="' + (x + 12) + '" y="' + (y + 6) + '" width="6" height="10" fill="#fff" stroke="#12233f" stroke-width="1.5"/>'; }
+  return '<svg class="hero" viewBox="0 0 640 290" role="img" aria-label="A player glides down to a round island while a pink storm closes in around it.">' +
+    '<g fill="#fff" opacity=".75"><ellipse cx="90" cy="60" rx="52" ry="16"/><ellipse cx="124" cy="48" rx="34" ry="15"/><ellipse cx="540" cy="86" rx="58" ry="16"/><ellipse cx="505" cy="74" rx="32" ry="14"/></g>' +
+    '<ellipse cx="320" cy="238" rx="312" ry="50" fill="#e5338f" opacity=".35"/>' +
+    '<ellipse cx="320" cy="238" rx="254" ry="44" fill="#2aa7e0"/>' +
+    '<ellipse cx="320" cy="238" rx="228" ry="36" fill="#f2d68a" stroke="#12233f" stroke-width="3"/><ellipse cx="320" cy="232" rx="196" ry="26" fill="#4bb543"/>' +
+    tree(190, 232, 1) + tree(235, 226, .8) + tree(440, 230, 1) + tree(404, 224, .75) + crate(280, 222) + crate(340, 228) +
+    '<ellipse cx="320" cy="238" rx="282" ry="47" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="10 9"/>' +
+    '<g transform="translate(232 8) scale(.88)"><g class="floaty">' + glider() + '</g></g></svg>';
+}
+function mapSVG() {
+  var p = (S.qi + (S.solved ? 1 : 0)) / Q.length, r = (44 - 36 * p).toFixed(1), d = 2 * r;
+  return '<svg viewBox="0 0 100 100" role="img" aria-label="Map of the island. The storm closes in as you answer."><circle cx="50" cy="50" r="48" fill="#2aa7e0"/><path d="M50 13c18-3 35 9 37 29s-8 37-30 43-41-6-44-28 15-41 37-44z" fill="#4bb543"/>' +
+    '<path fill="#e5338f" fill-opacity=".6" fill-rule="evenodd" d="M2 50a48 48 0 1 0 96 0a48 48 0 1 0-96 0zM' + (50 - r) + ' 50a' + r + ' ' + r + ' 0 1 0 ' + d + ' 0a' + r + ' ' + r + ' 0 1 0-' + d + ' 0z"/>' +
+    '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="#fff" stroke-width="2.5"/><circle cx="50" cy="50" r="6" fill="#ffd21f" stroke="#12233f" stroke-width="2.5"/></svg>';
+}
+function frac(a, b) {
+  var say = a === '1' && b === '2' ? 'and a half' : (a === '?' ? 'what number' : a) + ' over ' + b;
+  return '<span class="fr" data-say="' + say + '"><span>' + a + '</span><span>' + b + '</span></span>';
+}
+// a grid is shaded one column at a time from the left; a part column fills from the bottom up
+function gridSVG(n, o) {
+  o = o || {}; var P = o.plates || Math.max(1, Math.ceil(n / 100)), W = P * 140 + (P - 1) * 16, s = '', p, c, r, k;
+  for (p = 0; p < P; p++) {
+    var x0 = p * 156, m = Math.max(0, Math.min(100, n - 100 * p));
+    s += '<rect x="' + x0 + '" y="1" width="140" height="140" fill="#fff"/>';
+    for (c = 0; c < 10; c++) for (r = 0; r < 10; r++) if (c * 10 + (9 - r) < m) s += '<rect x="' + (x0 + c * 14) + '" y="' + (1 + r * 14) + '" width="14" height="14" fill="' + (o.col || C.grid) + '"/>';
+    for (k = 1; k < 10; k++) {
+      s += '<line x1="' + (x0 + k * 14) + '" y1="1" x2="' + (x0 + k * 14) + '" y2="141" stroke="#7f95ab" stroke-width="1"/>';
+      if (!o.tenths) s += '<line x1="' + x0 + '" y1="' + (1 + k * 14) + '" x2="' + (x0 + 140) + '" y2="' + (1 + k * 14) + '" stroke="#7f95ab" stroke-width="1"/>';
+    }
+    s += '<rect x="' + x0 + '" y="1" width="140" height="140" fill="none" stroke="#12233f" stroke-width="2.5"/>';
+  }
+  return '<span class="mini"><svg viewBox="-2 -1 ' + (W + 4) + ' 144" width="' + (W + 4) + '" height="144" role="img" aria-label="' + esc(o.aria || 'A grid of 100 squares with ' + n + ' squares shaded') + '">' + s + '</svg></span>';
+}
+// tape diagrams, one above the other: rows = [{n: parts, k: shaded, lab: '100%'}]
+function barsSVG(rows, aria) {
+  var W = 280, s = '', H = rows.length * 58 - 14;
+  rows.forEach(function (rw, j) {
+    var y = 1 + j * 58, w = W / rw.n, i;
+    s += '<rect x="0" y="' + y + '" width="' + W + '" height="44" fill="#fff"/>';
+    for (i = 0; i < rw.k; i++) s += '<rect x="' + (i * w).toFixed(2) + '" y="' + y + '" width="' + w.toFixed(2) + '" height="44" fill="' + C.bar + '"/>';
+    for (i = 1; i < rw.n; i++) s += '<line x1="' + (i * w).toFixed(2) + '" y1="' + y + '" x2="' + (i * w).toFixed(2) + '" y2="' + (y + 44) + '" stroke="#12233f" stroke-width="1.5"/>';
+    s += '<rect x="0" y="' + y + '" width="' + W + '" height="44" fill="none" stroke="#12233f" stroke-width="2.5"/>';
+    if (rw.lab) s += '<text x="' + (W + 10) + '" y="' + (y + 29) + '" font-size="18" font-weight="800" fill="#12233f">' + rw.lab + '</text>';
+  });
+  var VW = rows.some(function (r) { return r.lab; }) ? 350 : 284;
+  return '<span class="mini"><svg viewBox="-2 -1 ' + VW + ' ' + (H + 4) + '" width="' + VW + '" height="' + (H + 4) + '" role="img" aria-label="' + esc(aria) + '">' + s + '</svg></span>';
+}
+// the board of 20 sticky notes: g = square, s = star, f = smiley face, c = circle
+function boardSVG() {
+  var B = 'gsfg' + 'fcsc' + 'sfgs' + 'gsff' + 'cfcs', col = { g: '#a8d672', s: '#f7b267', f: '#f4ecdc', c: '#ee9fd4' }, i;
+  var s = '<svg class="sheet-art" viewBox="0 0 284 256" role="img" aria-label="A board with 20 sticky notes in 5 rows of 4: 4 with a square, 6 with a star, 6 with a smiley face and 4 with a circle."><rect x="2" y="2" width="280" height="252" rx="10" fill="#8a5a35" stroke="#5c3a1f" stroke-width="3"/>';
+  for (i = 0; i < 20; i++) {
+    var ch = B[i], x = 14 + (i % 4) * 66, y = 14 + Math.floor(i / 4) * 48, mx = x + 29, my = y + 20;
+    s += '<rect x="' + (x + 2) + '" y="' + (y + 3) + '" width="58" height="40" fill="rgba(0,0,0,.25)"/><rect x="' + x + '" y="' + y + '" width="58" height="40" fill="' + col[ch] + '"/>';
+    if (ch === 'g') s += '<rect x="' + (mx - 8) + '" y="' + (my - 8) + '" width="16" height="16" fill="#3b4cc0"/>';
+    else if (ch === 'c') s += '<circle cx="' + mx + '" cy="' + my + '" r="9" fill="#3b4cc0"/>';
+    else if (ch === 'f') s += '<circle cx="' + mx + '" cy="' + my + '" r="11" fill="none" stroke="#3b4cc0" stroke-width="2"/><circle cx="' + (mx - 4) + '" cy="' + (my - 3) + '" r="1.7" fill="#3b4cc0"/><circle cx="' + (mx + 4) + '" cy="' + (my - 3) + '" r="1.7" fill="#3b4cc0"/><path d="M' + (mx - 5) + ' ' + (my + 3) + 'q5 5 10 0" stroke="#3b4cc0" stroke-width="2" fill="none"/>';
+    else { var pts = [], k; for (k = 0; k < 10; k++) { var a = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? 5 : 12; pts.push((mx + rr * Math.cos(a)).toFixed(1) + ',' + (my + rr * Math.sin(a)).toFixed(1)); } s += '<polygon points="' + pts.join(' ') + '" fill="#3b4cc0"/>'; }
+  }
+  return s + '</svg>';
+}
+var KITTENS = barsSVG([{ n: 10, k: 10 }, { n: 10, k: 5 }], 'Two tape diagrams of 10 equal parts. The first is fully shaded. The second has 5 parts shaded.') + '<span class="note">Each bar is the grey kitten’s weight: 100%. The shaded parts are the orange kitten.</span>';
+var CARS = '<table class="tb"><tr><th>Type of car</th><th>Sold</th></tr><tr><td>Hybrid</td><td>8</td></tr><tr><td>All-electric</td><td>18</td></tr><tr><td>Gas-powered</td><td>74</td></tr><tr><th>Total</th><th>100</th></tr></table>';
+
+// ---------------- the questions: every problem of the book, with its numbers and names ----------------
+var Q = [
+  { tag: 'Sticky notes', art: boardSVG(), p: 'The board has <b>20</b> sticky notes and <b>6</b> of them have a star. Which ratio compares the star notes with <b>all</b> the notes?',
+    o: [frac('20', '6'), frac('6', '14'), frac('6', '20')], a: 2, hint: 'Stars first, then all 20 notes.', x: '6 out of 20 = ' + frac('6', '20') + '. That is the same as 30 out of 100: <b>30%</b>.' },
+  { tag: 'School mascot', art: gridSVG(40, { tenths: 1, col: C.tenths, aria: 'A tenths grid with 4 of the 10 strips shaded' }), p: 'Students voted for a new school mascot: a tiger, a shark or an eagle. <b>4 out of every 10</b> voters chose the tiger. How many out of every <b>100</b> voted for the tiger?',
+    o: ['4', '40', '100', '400'], a: 1, hint: '10 × 10 = 100, so multiply the 4 by 10 too.', x: frac('4', '10') + ' = ' + frac('40', '100') + '. That is <b>40%</b>.' },
+  { tag: 'School mascot', art: gridSVG(40), p: 'The shaded part is the tiger votes: 40%. What percent of the grid is <b>not</b> shaded?',
+    o: ['40%', '50%', '60%', '100%'], a: 2, hint: 'The whole grid is 100%, and 40% is shaded. How much is left?', x: '100% − 40% = <b>60%</b>. 60 of the 100 squares are not shaded.' },
+  { tag: 'School mascot', p: '<b>23 out of every 100</b> voters chose the eagle. Which model shows 23 out of 100 more easily?', pics: 1,
+    o: [gridSVG(23, { aria: 'A hundredths grid with 23 squares shaded' }) + 'hundredths grid', gridSVG(20, { tenths: 1, col: C.tenths, aria: 'A tenths grid with 2 strips shaded' }) + 'tenths grid'], a: 0,
+    hint: 'Each strip of a tenths grid is 10%. Can you make 23% with whole strips?', x: 'On a hundredths grid you can shade exactly 23 squares: 2 columns and 3 more squares.' },
+  { tag: 'Shanice’s kittens', art: KITTENS, p: 'Shanice’s cat had two kittens. The grey kitten weighs <b>4 ounces</b>. The orange kitten weighs <b>1.5 times</b> as much. The orange kitten’s weight is what percent of the grey kitten’s weight?',
+    o: ['15%', '50%', '100%', '150%'], a: 3, hint: 'The grey kitten is one whole bar: 100%. 1.5 times is one whole bar and half of another.', x: '100% + 50% = <b>150%</b>.' },
+  { tag: 'Shanice’s kittens', art: KITTENS, p: 'How many ounces does the orange kitten weigh?',
+    o: ['5 ounces', '6 ounces', '8 ounces', '15 ounces'], a: 1, hint: '1.5 × 4 = ?', x: '1.5 × 4 = <b>6</b> ounces. Then ' + frac('6', '4') + ' = ' + frac('150', '100') + ' = 150%.' },
+  { tag: 'Shanice’s kittens', art: KITTENS, p: 'Look at both bars together. What percent of the whole diagram is <b>not</b> shaded?',
+    o: ['5%', '25%', '50%', '75%'], a: 1, hint: 'The two bars have 20 equal parts, and 5 are not shaded. 5 out of 20 is the same as 1 out of 4.', x: frac('5', '20') + ' = ' + frac('1', '4') + ' = ' + frac('25', '100') + ' = <b>25%</b>.' },
+  { tag: 'Car sales', art: CARS, p: 'A car dealership sold <b>100</b> cars last month. What percent of the cars sold were <b>gas-powered</b>?',
+    o: ['8%', '18%', '26%', '74%'], a: 3, hint: '74 of the 100 cars sold were gas-powered.', x: '74 out of 100 = <b>74%</b>. The others were 8% hybrid and 18% all-electric.' },
+  { tag: 'Car sales', art: CARS, p: 'The owner needs to order <b>50</b> more cars from the factory, keeping the same percents. How many of each type?', one: 1,
+    o: ['8 hybrid, 18 all-electric, 74 gas-powered', '4 hybrid, 9 all-electric, 37 gas-powered', '5 hybrid, 10 all-electric, 35 gas-powered'], a: 1,
+    hint: '50 cars is half of 100 cars, so take half of each number.', x: 'Half of 8, 18 and 74 is <b>4, 9 and 37</b>. Check: 4 + 9 + 37 = 50 cars.' },
+  { tag: 'Read the model', art: barsSVG([{ n: 10, k: 3 }], 'A tape diagram in 10 equal parts. 3 parts are shaded.'), p: 'What percent does the model show?',
+    o: ['3%', '30%', '70%', '300%'], a: 1, hint: 'The bar has 10 equal parts, so each part is 10%.', x: '3 parts × 10% = <b>30%</b>.' },
+  { tag: 'Read the model', art: gridSVG(52, { aria: 'A hundredths grid. 5 columns and 2 more squares are shaded.' }), p: 'What percent does the model show?',
+    o: ['25%', '48%', '52%', '70%'], a: 2, hint: 'Count the full columns first (10% each), then the single squares (1% each).', x: '5 columns + 2 squares = 50% + 2% = <b>52%</b>.' },
+  { tag: 'Read the model', art: barsSVG([{ n: 10, k: 7 }], 'A tape diagram in 10 equal parts. 7 parts are shaded.'), p: 'Which percent matches the model? ' + frac('7', '10') + ' = ' + frac('?', '100') + ' = ?%',
+    o: ['7%', '17%', '30%', '70%'], a: 3, hint: '10 × 10 = 100, so each part is worth 10 out of 100.', x: frac('7', '10') + ' = ' + frac('70', '100') + ' = <b>70%</b>.' },
+  { tag: 'Read the model', art: barsSVG([{ n: 10, k: 10 }, { n: 10, k: 2 }], 'Two tape diagrams of 10 equal parts. The first is fully shaded. The second has 2 parts shaded.'), p: 'Which percent matches the model? ' + frac('12', '10') + ' = ' + frac('?', '100') + ' = ?%',
+    o: ['2%', '12%', '120%', '200%'], a: 2, hint: 'One whole bar of 10 parts is 100%. Each part is 10%. There are 12 shaded parts.', x: frac('12', '10') + ' = ' + frac('120', '100') + ' = <b>120%</b>: one whole and 20% more.' },
+  { tag: 'Read the model', art: gridSVG(35, { aria: 'A hundredths grid. 3 columns and 5 more squares are shaded.' }), p: 'What percent does the model show?',
+    o: ['35%', '53%', '65%', '350%'], a: 0, hint: '3 full columns are 30 squares. Then count the single squares.', x: frac('35', '100') + ' = <b>35%</b>.' },
+  { tag: 'Read the model', art: gridSVG(184, { aria: 'Two hundredths grids. The first is fully shaded. On the second, 8 columns and 4 more squares are shaded.' }), p: 'What percent do the two grids show?',
+    o: ['84%', '148%', '184%', '284%'], a: 2, hint: 'The first grid is 100 squares. On the second, count the columns (10 each), then the single squares.', x: '100 + 84 = 184, so ' + frac('184', '100') + ' = <b>184%</b>.' },
+  { tag: 'Shade the grid', p: 'On the last test, <b>83%</b> of the class earned an A. Which grid shows 83%?', pics: 1, g: [38, 83, 73], a: 1, hint: '83% is 8 whole columns (80%) and 3 single squares (3%).', x: '8 columns + 3 squares = 80% + 3% = <b>83%</b>.' },
+  { tag: 'Shade the grid', p: 'Which grid shows <b>54%</b>?', pics: 1, g: [54, 45, 64], a: 0, hint: '54% is 5 whole columns (50%) and 4 single squares (4%).', x: '5 columns + 4 squares = 50% + 4% = <b>54%</b>.' },
+  { tag: 'Shade the grid', p: 'Which grid shows <b>17%</b>?', pics: 1, g: [71, 7, 17], a: 2, hint: '17% is 1 whole column (10%) and 7 single squares (7%).', x: '1 column + 7 squares = 10% + 7% = <b>17%</b>.' },
+  { tag: 'Shade the grid', p: 'Which grid shows <b>62%</b>?', pics: 1, g: [26, 62, 52], a: 1, hint: '62% is 6 whole columns (60%) and 2 single squares (2%).', x: '6 columns + 2 squares = 60% + 2% = <b>62%</b>.' },
+  { tag: 'New restaurant', p: 'In a school survey, <b>2 out of every 10</b> students said they had tried the new restaurant in town. What percent of the students is that?',
+    o: ['2%', '12%', '20%', '80%'], a: 2, hint: '2 out of 10 = ? out of 100. Multiply both numbers by 10.', x: frac('2', '10') + ' = ' + frac('20', '100') + ' = <b>20%</b>.' },
+  { tag: 'Car park', p: '<b>7 out of every 10</b> cars in a car park are white. What percent of the cars are <b>not</b> white?',
+    o: ['3%', '30%', '70%', '73%'], a: 1, hint: 'If 7 out of every 10 cars are white, then 3 out of every 10 are not white.', x: frac('3', '10') + ' = ' + frac('30', '100') + ' = <b>30%</b>. 70% + 30% = 100%.' },
+  { tag: 'Popcorn', p: 'The size of a medium popcorn is <b>1.7 times</b> the size of a small popcorn. The medium is what percent of the small?',
+    o: ['17%', '70%', '107%', '170%'], a: 3, hint: 'The small popcorn is the whole: 100%. 1.7 times is 1 whole and 7 tenths more.', x: '1.7 × 100% = <b>170%</b>.' },
+  { tag: 'Sharks', p: 'An Atlantic blacktip shark can grow to be <b>6' + frac('1', '2') + ' feet</b> long. A mako shark is <b>2 times</b> as long. The mako’s length is what percent of the blacktip’s length?',
+    o: ['2%', '20%', '100%', '200%'], a: 3, hint: 'The blacktip is the whole: 100%. The mako is 2 times as long.', x: '2 × 100% = <b>200%</b>. (6' + frac('1', '2') + ' × 2 = 13 feet.)' },
+  { tag: 'Sofia’s lemonade', art: gridSVG(130, { plates: 2, aria: 'Two hundredths grids. The first is fully shaded. On the second, 3 columns are shaded.' }), p: 'Sofia sold <b>1.3 times</b> as many cups of lemonade this week as last week. Each grid is last week’s sales: 100%. This week’s sales are what percent of last week’s?',
+    o: ['13%', '30%', '130%', '230%'], a: 2, hint: 'Last week is one whole grid: 100%. 1.3 times is one whole grid and 3 columns of another.', x: '100% + 30% = <b>130%</b>.' },
+  { tag: 'Sofia’s lemonade', art: gridSVG(130, { plates: 2, aria: 'Two hundredths grids. The first is fully shaded. On the second, 3 columns are shaded.' }), p: 'Did Sofia sell more or less than 30% of last week’s sales this week?', one: 1,
+    o: ['More than 30%', 'Less than 30%', 'Exactly 30%'], a: 0, hint: 'Look at the grids: this week is a whole grid and 30 more squares.', x: '130% = 100% + 30%. She sold <b>more</b>: all of last week’s amount, and 30% more.' },
+  { tag: 'Andrew’s rule', p: 'Andrew says that to write a number as a percent, you just write the number and then the % sign. Is Andrew right?', one: 1,
+    o: ['Yes, it always works.', 'Yes, because 40 out of 100 is 40%.', 'No, because 4 out of 10 is 40%, not 4%.'], a: 2, hint: 'Try his rule on 4 out of 10. Is it 4%?', x: 'A percent always compares with 100. 4 out of 10 = 40 out of 100 = <b>40%</b>. His rule only works when the number is already out of 100.' },
+  { tag: 'Tape diagram', art: barsSVG([{ n: 5, k: 5, lab: '100%' }, { n: 5, k: 2 }], 'Two tape diagrams of 5 equal parts. The top bar is fully shaded and is 100%. The bottom bar has 2 parts shaded.'), p: 'The top bar is 100%. What percent does the bottom bar show?',
+    o: ['2%', '20%', '40%', '50%'], a: 2, hint: 'The top bar has 5 equal parts, so each part is 100 ÷ 5 = 20%.', x: '2 parts × 20% = <b>40%</b>.' },
+  { tag: 'Springfield survey', p: 'A survey finds that <b>3 out of every 10</b> students in Springfield live more than 2 miles from their school. What percent of the students is that?',
+    o: ['3%', '30%', '70%', '300%'], a: 1, hint: '3 out of 10 = ? out of 100.', x: frac('3', '10') + ' = ' + frac('30', '100') + ' = <b>30%</b>.' },
+  { tag: 'Frozen yogurt', p: 'A frozen yogurt shop sells <b>2.7 times</b> as many vanilla frozen yogurts as strawberry frozen yogurts. The vanilla sales are what percent of the strawberry sales?',
+    o: ['0.27%', '2.7%', '27%', '270%'], a: 3, hint: 'Vanilla sells more than strawberry, so the answer must be more than 100%.', x: '2.7 times as many = 2.7 × 100% = <b>270%</b>.' },
+  { tag: 'Travel by train', p: '<b>4 out of 5</b> people in a survey said they would travel by train more often if it cost less. Steve says that 40% of the people said this. What is the correct percent?',
+    o: ['40%', '45%', '80%', '90%'], a: 2, hint: 'Make the whole 100: 5 × 20 = 100, so multiply the 4 by 20 too.', x: frac('4 × 20', '5 × 20') + ' = ' + frac('80', '100') + ' = <b>80%</b>. Steve is not correct: the whole is 5, not 10.' }
+];
+
+// ---------------- state ----------------
+var KEY = 'storm-drop-100-v1', S = null;
+function fresh() { return { qi: 0, left: 100, shield: 100, stars: 0, streak: 0, best: 0, tries: 0, solved: false, missed: [] }; }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }
+function load() { try { var j = localStorage.getItem(KEY); return j ? JSON.parse(j) : null; } catch (e) { return null; } }
+function wipe() { try { localStorage.removeItem(KEY); } catch (e) { } }
+function show(id) { ['start', 'play', 'end'].forEach(function (s) { $(s).classList.toggle('on', s === id); }); window.scrollTo(0, 0); }
+var toastT = null;
+function toast(msg) { var t = $('toast'); t.innerHTML = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('on'); }, 2600); }
+function confetti() {
+  if (RM) return; var box = $('confetti'), cols = ['#ffd21f', '#e5338f', '#27b6f2', '#14a155', '#fff'], i, h = '';
+  for (i = 0; i < 70; i++) h += '<i style="left:' + (Math.random() * 100).toFixed(1) + '%;background:' + cols[i % 5] + ';animation-delay:' + (Math.random() * 1.2).toFixed(2) + 's"></i>';
+  box.innerHTML = h; setTimeout(function () { box.innerHTML = ''; }, 4500);
+}
+
+// ---------------- the top bar ----------------
+function hud() {
+  var n = Q.length, done = S.qi + (S.solved ? 1 : 0);
+  $('map').innerHTML = mapSVG();
+  $('left').textContent = S.left;
+  $('stars').textContent = S.stars;
+  $('shBar').style.width = S.shield + '%'; $('shTxt').textContent = 'Shield ' + S.shield + '%';
+  $('pgBar').style.width = (done / n * 100) + '%'; $('pgTxt').textContent = 'Question ' + Math.min(S.qi + 1, n) + ' of ' + n;
+  document.documentElement.style.setProperty('--storm-a', (0.05 + 0.5 * done / n).toFixed(2));
+}
+
+// ---------------- one question on the screen ----------------
+function renderQ() {
+  var q = Q[S.qi], box = $('opts'), opts = q.g ? q.g.map(function (v) { return gridSVG(v); }) : q.o;
+  $('tag').textContent = q.tag;
+  $('prompt').innerHTML = q.p;
+  var art = $('art'); art.innerHTML = q.art || ''; art.hidden = !q.art;
+  box.className = 'opts' + (q.pics ? ' pics' + (opts.length === 2 ? ' two' : '') : '') + (q.one ? ' one' : '');
+  box.innerHTML = opts.map(function (t, i) { return '<button class="opt" data-i="' + i + '"><span class="ltr">' + 'ABCD'[i] + '</span><span class="t">' + t + '</span></button>'; }).join('');
+  var fb = $('fb'); fb.className = 'fb'; fb.innerHTML = '';
+  $('nextBtn').classList.remove('on');
+  hud();
+}
+function optBtn(i) { return $('opts').querySelector('[data-i="' + i + '"]'); }
+function answer(i) {
+  var q = Q[S.qi], b = optBtn(i); if (S.solved || !b || b.disabled) return;
+  var fb = $('fb');
+  if (i === q.a) {
+    var first = S.tries === 0;
+    S.solved = true;
+    b.classList.add('good');
+    [].forEach.call($('opts').children, function (x) { x.disabled = true; x.classList.add('dim'); });
+    if (first) {
+      S.stars++; S.streak++; S.best = Math.max(S.best, S.streak);
+      if (S.streak % 3 === 0) { S.shield = Math.min(100, S.shield + 10); toast(S.streak + ' in a row! Shield +10%'); SFX.shield(); }
+    }
+    // the final rank is 1 + the number of questions missed on the first try
+    var rank = 1 + S.missed.length, v = Math.round(100 - (100 - rank) * (S.qi + 1) / Q.length);
+    S.left = S.qi === Q.length - 1 ? rank : Math.min(S.left, v);
+    fb.className = 'fb on good';
+    fb.innerHTML = '<b class="h">Correct!' + (first ? ' +1 ★' : '') + '</b> ' + q.x;
+    SFX.ok(); if (first) SFX.star();
+    var nb = $('nextBtn'); nb.textContent = S.qi === Q.length - 1 ? 'See my rank ▶' : 'Next ▶'; nb.classList.add('on');
+    if (nb.scrollIntoView) nb.scrollIntoView({ block: 'nearest', behavior: RM ? 'auto' : 'smooth' });
+  } else {
+    if (S.tries === 0) { S.missed.push(S.qi); S.streak = 0; }
+    S.tries++;
+    S.shield = Math.max(0, S.shield - 10);
+    b.classList.add('bad'); b.disabled = true;
+    fb.className = 'fb on bad';
+    fb.innerHTML = '<b class="h">Storm hit! Shield −10%.</b> Try again. Hint: ' + q.hint;
+    SFX.hit();
+    var h = $('hud'); h.classList.remove('hit'); void h.offsetWidth; h.classList.add('hit');
+  }
+  hud(); save();
+}
+function next() {
+  if (!S.solved) return;
+  S.qi++; S.tries = 0; S.solved = false;
+  if (S.qi >= Q.length) { finish(); return; }
+  renderQ(); save(); window.scrollTo(0, 0);
+  if (S.qi === 10) toast('The storm is closing in! ' + S.left + ' players left.');
+  if (S.qi === 20) toast('Final circle! ' + S.left + ' players left.');
+}
+
+// ---------------- the end ----------------
+function finish() {
+  var n = Q.length, first = n - S.missed.length, pct = Math.round(first / n * 100), rank = 1 + S.missed.length;
+  $('endTitle').textContent = rank === 1 ? 'Last one standing!' : rank <= 10 ? 'Top 10 finish!' : 'You made it to the end!';
+  $('endRank').textContent = '#' + rank;
+  $('endPct').textContent = pct + '%';
+  $('endLine').textContent = first + ' out of ' + n + ' right on the first try. You finished #' + rank + ' of 100 players.';
+  $('endStars').textContent = S.stars; $('endShield').textContent = S.shield + '%'; $('endStreak').textContent = S.best;
+  var seen = {}; S.missed.forEach(function (i) { var t = Q[i].tag; (seen[t] = seen[t] || []).push(i + 1); });
+  var keys = Object.keys(seen);
+  $('endAgain').innerHTML = keys.length ? '<b>Practise these again:</b><ul>' + keys.map(function (t) { return '<li>' + t + ' (question ' + seen[t].join(', ') + ')</li>'; }).join('') + '</ul>' : '';
+  document.documentElement.style.setProperty('--storm-a', '0');
+  wipe(); Music.stop(); show('end'); SFX.win(); confetti();
+}
+
+// ---------------- reading aloud with the device's own voice ----------------
+var CAN_SPEAK = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+function plain(el) {
+  var c = el.cloneNode(true);
+  [].forEach.call(c.querySelectorAll('.fr'), function (f) { f.replaceWith(' ' + f.getAttribute('data-say') + ' '); });
+  [].forEach.call(c.querySelectorAll('svg'), function (s) { s.remove(); });
+  return c.textContent.replace(/\s+/g, ' ').trim();
+}
+function readAloud() {
+  if (!CAN_SPEAK) return;
+  var txt = plain($('prompt')), q = Q[S.qi];
+  [].forEach.call($('opts').children, function (b, i) { var t = plain(b.querySelector('.t')); txt += ' ' + 'ABCD'[i] + '. ' + (t || 'picture') + '.'; });
+  try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(txt); u.lang = 'en-US'; u.rate = 0.9; speechSynthesis.speak(u); } catch (e) { }
+}
+
+// ---------------- starting ----------------
+function begin(saved) {
+  S = saved || fresh();
+  if (S.solved) { S.qi++; S.tries = 0; S.solved = false; }
+  if (S.qi >= Q.length) { finish(); return; }
+  show('play'); renderQ(); save(); Music.start();
+}
+function drop(saved) {
+  try { ac(); } catch (e) { }
+  SFX.drop();
+  var d = $('drop'); d.classList.add('on');
+  setTimeout(function () { d.classList.remove('on'); begin(saved); }, RM ? 500 : 1400);
+}
+function setupStart() {
+  var sv = load();
+  $('goBtn').textContent = sv ? 'Continue' : 'Drop in!';
+  $('newBtn').style.display = sv ? 'block' : 'none';
+}
+$('hero').innerHTML = heroSVG();
+$('dropArt').innerHTML = glider();
+$('goBtn').onclick = function () { drop(load()); };
+$('newBtn').onclick = function () { wipe(); drop(null); };
+$('againBtn').onclick = function () { wipe(); drop(null); };
+$('nextBtn').onclick = next;
+$('opts').addEventListener('click', function (e) { var b = e.target.closest('.opt'); if (b) answer(+b.getAttribute('data-i')); });
+$('readBtn').onclick = readAloud;
+if (!CAN_SPEAK) $('readBtn').style.display = 'none';
+$('sndBtn').onclick = function () {
+  soundOn = !soundOn; this.classList.toggle('off', !soundOn);
+  if (soundOn) Music.start(); else { Music.stop(); if (CAN_SPEAK) speechSynthesis.cancel(); }
+};
+setupStart();
+
+// test hooks
+window.__game = { get S() { return S; }, set S(v) { S = v; }, Q: Q, answer: answer, next: next, begin: begin, finish: finish, renderQ: renderQ, fresh: fresh, load: load, wipe: wipe, setupStart: setupStart };
+</script>
+</body>
+</html>
